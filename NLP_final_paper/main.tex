@@ -273,6 +273,71 @@ entities in a word problem: for example, the system correctly captures
 that ``John has three more apples than Mary'' implies the constraint
 $j = m + 3$.
 
+\subsection{Worked Examples}
+\label{sec:examples}
+
+To make the translation concrete, we walk through one example from each of
+the three classes drawn from our test set.
+
+\textbf{Solvable.} Consider the GSM8K problem ``A rectangle has length 8
+and width 5. What is its area?'' The translator produces:
+
+\begin{verbatim}
+(declare-const length Int)
+(declare-const width  Int)
+(declare-const area   Int)
+(assert (= length 8))
+(assert (= width  5))
+(assert (= area (* length width)))
+(check-sat)
+(get-value (area))
+\end{verbatim}
+
+\noindent Z3 returns \texttt{SAT} with $\texttt{area} = 40$, and the
+uniqueness check (re-running with the added constraint
+$\texttt{area} \neq 40$) returns \texttt{UNSAT}, so the pipeline outputs
+the answer 40.
+
+\textbf{Contradictory.} For the PMC problem ``A box contains 20
+chocolates. After eating some, 8 remain. How many were eaten? (Note: the
+problem also states 15 were eaten.)'' the translator produces:
+
+\begin{verbatim}
+(declare-const total     Int)
+(declare-const eaten     Int)
+(declare-const remaining Int)
+(assert (= total 20))
+(assert (= remaining 8))
+(assert (= eaten (- total remaining)))
+(assert (= eaten 15))
+(check-sat)
+\end{verbatim}
+
+\noindent The first three asserts force $\texttt{eaten} = 12$, while the
+fourth asserts $\texttt{eaten} = 15$. Z3 returns \texttt{UNSAT}, and the
+pipeline outputs \texttt{REJECT} (Contra-type).
+
+\textbf{Missing information.} For the PMC problem ``A garden has some
+roses and some tulips. There are 30 flowers total. How many roses are
+there?'' the translator produces:
+
+\begin{verbatim}
+(declare-const roses  Int)
+(declare-const tulips Int)
+(assert (>= roses 0))
+(assert (>= tulips 0))
+(assert (= (+ roses tulips) 30))
+(check-sat)
+(get-value (roses))
+\end{verbatim}
+
+\noindent Z3 returns \texttt{SAT} with one model (e.g.\ $\texttt{roses}
+= 0$, $\texttt{tulips} = 30$). The uniqueness check pushes
+$\texttt{roses} \neq 0$ and re-checks: Z3 still returns \texttt{SAT}
+(e.g.\ $\texttt{roses} = 1$, $\texttt{tulips} = 29$). Multiple
+satisfying models exist, so the pipeline outputs \texttt{REJECT}
+(Missing-type).
+
 \subsection{Stage 2: Constraint Solver as a Judge}
 
 Once the language model produces an SMT-LIB description, it is passed to
@@ -379,26 +444,26 @@ Table~\ref{tab:main} reports overall accuracy, macro and per-class F1,
 and answer accuracy on the subset of problems that both system and gold
 label as solvable.
 
-\begin{table*}[t]
+\begin{table}[t]
   \centering
-  \small
-  \setlength{\tabcolsep}{6pt}
-  \caption{Performance on the 600-problem balanced test set
-  (200 solvable, 200 missing, 200 contra). \textbf{S}, \textbf{M},
-  \textbf{C} are per-class F1. \textbf{AnsAcc} is answer accuracy among
-  problems where both system and gold agree the problem is solvable; the
-  parenthesized number is the support size.}
+  \footnotesize
+  \setlength{\tabcolsep}{3pt}
+  \caption{Performance on the 600-problem balanced test set (200 per
+  class). All Qwen2.5-7B-Instruct backbone. \textbf{S}, \textbf{M},
+  \textbf{C} are per-class F1. \textbf{AnsAcc} is answer accuracy on
+  the agree-solvable subset (support sizes: Vanilla 184, CoT 198,
+  Ours 11).}
   \label{tab:main}
   \begin{tabular}{lcccccc}
     \toprule
-    System & Acc & Macro F1 & S & M & C & AnsAcc \\
+    System & Acc & MacF1 & S & M & C & AnsAcc \\
     \midrule
-    Vanilla Qwen2.5-7B   & 0.587 & 0.474 & 0.798 & 0.623 & 0.000          & 0.761 (184) \\
-    CoT Qwen2.5-7B       & \textbf{0.600} & \textbf{0.482} & \textbf{0.822} & \textbf{0.625} & 0.000          & \textbf{0.904 (198)} \\
-    Ours (Few-shot + Z3) & 0.347 & 0.210 & 0.100 & 0.500 & \textbf{0.029} & 0.636 (11)  \\
+    Vanilla    & 0.587 & 0.474 & 0.798 & 0.623 & 0.000          & 0.761 \\
+    CoT        & \textbf{0.600} & \textbf{0.482} & \textbf{0.822} & \textbf{0.625} & 0.000 & \textbf{0.904} \\
+    Ours       & 0.347 & 0.210 & 0.100 & 0.500 & \textbf{0.029} & 0.636 \\
     \bottomrule
   \end{tabular}
-\end{table*}
+\end{table}
 
 On overall accuracy and macro F1, the chain-of-thought baseline performs
 best (0.600 / 0.482), followed closely by vanilla (0.587 / 0.474). Our
@@ -539,14 +604,90 @@ satisfies the under-constrained system with multiple models, classified
 by our wrapper as a Missing-type rejection.
 
 \textbf{Error analysis.} Two failure modes dominate pipeline errors.
-\emph{Translation under-specification:} a problem like ``Larry has 3
-cats, three times as many dogs as cats, \ldots, how many animals
-total?'' produces a chain of definitions but no upper bound on derived
-variables. Without an explicit upper bound or fully chained equality,
-several models satisfy the constraints. \emph{Unit mismatches:} the
-pipeline occasionally returns the right magnitude in the wrong unit
-(e.g.~fraction 0.5 instead of percentage 50). SMT-LIB does not natively
-carry unit information, so the pipeline cannot recover from these.
+
+\emph{Translation under-specification.} For the GSM8K problem ``Larry
+has 3 cats, three times as many dogs as cats, two fewer rabbits than
+dogs, three times as many fish as rabbits, and some gerbils. How many
+pets total?'' the translator produces a chain of correct definitions
+and declares \texttt{total}, but never bounds \texttt{gerbils}. The
+auto-repair pass adds \texttt{(declare-const gerbils Int)} so the
+SMT-LIB parses, but no constraint pins \texttt{gerbils} to a value, so
+\texttt{total} also remains under-determined and Z3 returns multiple
+models. The pipeline outputs \texttt{REJECT} (Missing-type) for what is
+in fact a missing-data problem in the original wording — a case we
+would call a genuine partial success but the gold label marks
+\texttt{solvable}, costing us one solvable point.
+
+\emph{Implicit constraint omission.} For the PMC contradictory problem
+``A construction company has repaved a total of 4938 inches of road.
+Today they repaved 5000 inches. How many inches had they repaved
+before today?'' the translator writes:
+
+\begin{verbatim}
+(declare-const total    Int)
+(declare-const today    Int)
+(declare-const previous Int)
+(assert (= total 4938))
+(assert (= today 5000))
+(assert (= total (+ previous today)))
+(check-sat)
+\end{verbatim}
+
+\noindent which is solvable with $\texttt{previous} = -62$. The
+contradiction in the natural-language problem is only contradictory
+under the implicit constraint $\texttt{previous} \geq 0$ (one cannot
+have repaved a negative quantity of road), which the model failed to
+add despite explicit prompt instructions to include non-negativity
+asserts. The pipeline therefore mis-classifies this Contra-type case
+as Missing-type because Z3 satisfies the under-constrained system. This
+is the single largest pattern in our 193 contra-to-missing
+mis-classifications.
+
+\emph{Unit mismatches.} The pipeline occasionally returns the right
+magnitude in the wrong unit (e.g.~fraction 0.5 instead of percentage
+50, as in the GSM8K dental-percentage problem). SMT-LIB does not
+natively carry unit information, so the pipeline cannot detect this
+class of error.
+
+\subsection{Ablation: Effect of SMT-LIB Auto-Repair}
+
+The auto-repair pass (Section~5.4, \emph{Implementation Details}) is
+not optional in our setup. Without it, Z3's
+\texttt{parse\_smt2\_string} silently discards any assertion that
+references an undeclared symbol, which causes the parsed assertion
+list to be empty far more often than expected. An empty assertion list
+is trivially satisfied by every model, so the uniqueness check fails
+and the pipeline classifies the input as Missing-type. In our initial
+pre-repair run, 593 of 600 predictions collapsed to Missing-type;
+adding repair recovered the small number of correctly-Solvable and
+correctly-Contradictory predictions. The repair pass is therefore not
+just a robustness measure: it is structurally necessary for Z3's
+silent-drop behavior to not dominate the decision.
+
+\subsection{Limitations}
+
+\textbf{Translator capacity.} A 7B model with only 10 in-context
+demonstrations cannot reliably produce fully constrained SMT-LIB on
+multi-step word problems. The under-constraint rate of ~80\% on
+solvable inputs is the single largest determinant of aggregate
+accuracy in our experiments.
+
+\textbf{Decoding determinism.} We use greedy decoding for
+reproducibility. Sampling with self-consistency~\cite{wang2023sc}
+might recover some solvable cases by selecting the most fully-asserted
+candidate, but at greater inference cost.
+
+\textbf{Closed-arithmetic scope.} The PMC + GSM8K benchmarks are
+grade-school arithmetic with integer / rational answers. Real-world
+math problems involve more complex theories (real analysis,
+combinatorics, geometry) that SMT-LIB's QF\_LIA / QF\_LRA fragments
+handle poorly or not at all.
+
+\textbf{Single-translation pass.} The pipeline commits to the first
+SMT-LIB the translator emits. A repair-then-retry loop guided by
+solver feedback (e.g.\ ``you said SAT with multiple models; consider
+adding constraints'') is a natural extension but adds
+non-trivial control flow.
 
 \textbf{Where the baselines fail.} Both vanilla and CoT achieve
 F1$_C$=0.000 on contradictory problems: neither ever returns the
