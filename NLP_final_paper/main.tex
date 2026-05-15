@@ -506,7 +506,17 @@ ill-defined problems. The pipeline reduces this rate by approximately an
 order of magnitude (2.00\% vs.\ 19.25--21.00\%), because the only path
 to a numeric output is through a uniquely-satisfying Z3 model and Z3
 will not produce one unless the translator has fully constrained the
-problem.
+problem. Figure~\ref{fig:hall} visualizes the gap.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_hallucination.pdf}
+  \caption{Hallucination rate by system. Each bar shows the number of
+  ill-defined problems (out of 400) for which the system produced a
+  confident numeric answer rather than \texttt{REJECT}, expressed as a
+  percentage.}
+  \label{fig:hall}
+\end{figure}
 
 \subsection{Binary Reject-vs-Solve View}
 
@@ -542,7 +552,19 @@ rather than from failing to reject when it should.
 
 \subsection{Confusion Analysis}
 
-Table~\ref{tab:confusion} shows per-system confusion matrices.
+Table~\ref{tab:confusion} and Figure~\ref{fig:conf} show per-system
+confusion matrices.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.9\textwidth]{fig_confusion.pdf}
+  \caption{Confusion matrices as heatmaps (darker = higher count).
+  The pipeline (right) concentrates predictions in the
+  \texttt{Missing} column, including for solvable inputs, reflecting
+  its over-abstention bias. Neither baseline ever predicts
+  \texttt{Contra}.}
+  \label{fig:conf}
+\end{figure*}
 
 \begin{table}[t]
   \centering
