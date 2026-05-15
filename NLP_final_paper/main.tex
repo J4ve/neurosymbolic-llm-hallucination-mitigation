@@ -377,8 +377,10 @@ Table~\ref{tab:main} reports overall accuracy, macro and per-class F1,
 and answer accuracy on the subset of problems that both system and gold
 label as solvable.
 
-\begin{table}[h]
+\begin{table*}[t]
   \centering
+  \small
+  \setlength{\tabcolsep}{6pt}
   \caption{Performance on the 600-problem balanced test set
   (200 solvable, 200 missing, 200 contra). \textbf{S}, \textbf{M},
   \textbf{C} are per-class F1. \textbf{AnsAcc} is answer accuracy among
@@ -394,7 +396,7 @@ label as solvable.
     Ours (Few-shot + Z3) & 0.347 & 0.210 & 0.100 & 0.500 & \textbf{0.029} & 0.636 (11)  \\
     \bottomrule
   \end{tabular}
-\end{table}
+\end{table*}
 
 On overall accuracy and macro F1, the chain-of-thought baseline performs
 best (0.600 / 0.482), followed closely by vanilla (0.587 / 0.474). Our
@@ -414,15 +416,16 @@ We define the \emph{hallucination rate} as the fraction of ill-defined
 numeric answer. This is the failure mode the project was designed to
 mitigate.
 
-\begin{table}[h]
+\begin{table}[t]
   \centering
+  \small
   \caption{Hallucination rate: fraction of ill-defined problems (out of
   400) for which the system returned a numeric answer instead of
   abstaining.}
   \label{tab:hallucination}
   \begin{tabular}{lcc}
     \toprule
-    System & Hallucinated answers / 400 & Rate \\
+    System & Halluc.\ / 400 & Rate \\
     \midrule
     Vanilla Qwen2.5-7B   & 77             & 19.25\% \\
     CoT Qwen2.5-7B       & 84             & 21.00\% \\
@@ -442,8 +445,9 @@ problem.
 
 Table~\ref{tab:confusion} shows per-system confusion matrices.
 
-\begin{table}[h]
+\begin{table}[t]
   \centering
+  \small
   \caption{Confusion matrices. Rows = gold class, columns = predicted
   class.}
   \label{tab:confusion}
@@ -467,6 +471,7 @@ Table~\ref{tab:confusion} shows per-system confusion matrices.
     \bottomrule
   \end{tabular}
 \end{table}
+\normalsize
 
 Two patterns stand out. (1) Neither baseline ever returns the
 contradiction label; both collapse contra inputs into either a

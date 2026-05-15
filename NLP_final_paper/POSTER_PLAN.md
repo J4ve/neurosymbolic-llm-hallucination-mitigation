@@ -1,128 +1,165 @@
-# Poster Plan
+# Poster Plan (layman-friendly)
 
-**Title:** Mitigating Reasoning Hallucinations in LLMs via Neuro-Symbolic Integration for Ill-Defined Mathematical Problems
-**Authors:** Jave Bacsain, Ivy Pauline Muit — CSAC 224 NLP, CSPC
+**Goal:** non-CS person walking past in 30 seconds gets it.
 
-## Recommended physical size
+**Title (big, plain):**
+> Teaching AI to Say "I Don't Know" When Math Problems Are Broken
 
-A1 (594 × 841 mm) portrait, or 36" × 48" landscape if your school uses
-US sizes. Portrait reads better when judges walk a hallway.
+**Authors line:** Jave Bacsain, Ivy Pauline Muit — CSAC 224 NLP, CSPC
 
-## Tool
+## Size + tool
 
-PowerPoint (single 33.1" × 46.8" slide) or LaTeX `tikzposter` / `beamerposter`.
-PowerPoint is faster for first iteration; export to PDF for printing.
+A1 portrait (594 × 841 mm) for hallway viewing.
+Make in PowerPoint, export PDF for printing.
 
-## Header band (full width, ~10% of height)
+---
 
-- Title (60--72 pt, bold)
-- Authors + emails (24--28 pt)
-- CSPC logo left, CSAC 224 -- NLP label right
-- Thin separator below
+## Layout — 3 columns, top-to-bottom
 
-## 3-column layout (rest of poster)
+### Column 1 — The Problem
 
-### Column 1 — Problem & Approach
+**Box: "The lying chatbot"**
 
-**Box 1.1: The Problem**
-- 1 sentence: LLMs hallucinate confident answers when math problems
-  are missing info or contradictory.
-- Real-world quote / example of a missing-info word problem
-- Bullet: "20% of ill-defined inputs answered confidently wrong by
-  vanilla / CoT Qwen-7B"
+- Cartoon: chatbot face confidently saying "$15" to broken math problem
+- Caption: "AI chatbots make up confident answers — even when problem
+  is impossible to solve."
 
-**Box 1.2: Our Idea**
-- 1 sentence: separate language understanding from logical evaluation.
-- Pipeline diagram (use `pipeline.png` from paper)
-- Caption: "LLM translates problem → SMT-LIB. Z3 decides solvable /
-  contradictory / under-determined."
+**Box: "Example broken problem"**
 
-**Box 1.3: Why It Matters**
-- Bullet list: applications where wrong-answer >> abstention
-  - Medical dosing
-  - Financial calculation
-  - Automated grading
+> *John spent $10 and has $5 left. He also has $50 left.
+>  How much did he start with?*
 
-### Column 2 — Method & Data
+Below in red: "Contradiction! Can't have both $5 and $50."
+Below in red: "Chatbot answer: $15  ← WRONG (made up)"
 
-**Box 2.1: Two-Stage Pipeline**
-- Diagram: Problem → LLM (Qwen2.5-7B) → SMT-LIB → Z3 →
-  {SOLVED / UNSAT / multi-model} → answer or REJECT
+**Box: "Why this matters"**
 
-**Box 2.2: How Z3 Decides**
-- `SAT` + unique model → numeric answer (Solvable)
-- `UNSAT` → REJECT (Contra)
-- `SAT` + multiple models → REJECT (Missing)
-- Uniqueness check: assert "var != first value", re-check
+Plain icons + 1-line each:
+- 💊 Medical dosing — wrong dose = harm
+- 💰 Finance — wrong calculation = lost money
+- 📝 Grading — wrong score = unfair
 
-**Box 2.3: Data**
-- Test set: 600 problems, balanced 200 / 200 / 200
-  - 200 from PMC `missing_test` split
-  - 200 from PMC `contra_test` split
-  - 200 from GSM8K `test` split
-- Few-shot: 10 hand-crafted (problem, SMT-LIB) demos
+### Column 2 — Our Solution
 
-**Box 2.4: Setup**
-- Qwen2.5-7B-Instruct, 4-bit nf4
-- Single RTX A5000 per system
-- 5 s Z3 timeout, greedy decoding, seed 42
-- SMT-LIB auto-repair pass
+**Big diagram (centerpiece of poster):**
 
-### Column 3 — Results & Takeaways
+```
+   English math problem
+            ↓
+   [ Chatbot — TRANSLATOR ONLY ]   ← writes problem as logic code
+            ↓
+       Logic code (SMT-LIB)
+            ↓
+   [ Z3 logic tool — JUDGE ]        ← proves; cannot lie
+            ↓
+   ┌────────┴────────┐
+   ↓        ↓        ↓
+Answer   "REJECT"  "REJECT"
+       (contradicts) (missing info)
+```
 
-**Box 3.1: Main Table**
-| System | Acc | Macro F1 | F1_C | AnsAcc |
-|---|---|---|---|---|
-| Vanilla | 0.587 | 0.474 | 0.000 | 0.761 |
-| CoT     | 0.600 | 0.482 | 0.000 | 0.904 |
-| **Ours**| 0.347 | 0.210 | **0.029** | 0.636 |
+Caption below diagram: "Chatbot translates. Z3 decides. Chatbot can't
+sneak in a fake answer because Z3 is the gatekeeper."
 
-**Box 3.2: HEADLINE — Hallucination Rate** (largest visual element)
-- Big bar chart, three bars:
-  - Vanilla: 19.25%
-  - CoT: 21.00%
-  - **Ours: 2.00%** (highlight in different color)
-- Subtitle: "10× fewer confident wrong answers on ill-defined inputs"
+**Box: "What is Z3?"**
 
-**Box 3.3: What the Pipeline Buys vs Pays**
-- BUYS: structural immunity to hallucination on ill-defined problems;
-  only system that detects any contradictions explicitly.
-- PAYS: 7B model under-constrains SMT-LIB → over-rejects 95% of
-  solvable inputs.
+- Free logic tool from Microsoft Research
+- Used in real software (security, hardware design)
+- Doesn't guess — it PROVES
+- If logic has solution → tells you the number
+- If logic contradicts → says UNSAT
+- If many solutions → says SAT but with multiple answers
 
-**Box 3.4: Conclusion + Future Work**
-- Few-shot prompted neuro-symbolic = safer (lower hallucination) but
-  not yet competitive on aggregate F1 at 7B.
-- Future: fine-tune translator via Z3-verified auto-labels; add
-  unit-typed SMT-LIB; hybridize with VCSearch.
+**Box: "Where data came from"**
 
-## Footer band (~5% height)
+- 600 math problems, balanced 3 ways:
+  - 200 normal (have answer) — from GSM8K (grade-school math)
+  - 200 missing info — from PMC benchmark
+  - 200 contradictory — from PMC benchmark
+- All free + public (HuggingFace)
 
-- QR code → GitHub repo (https://github.com/J4ve/NLP_FP)
-- "CSAC 224 Final Project, NLP, 2026"
-- Acknowledgements: AI Research Center for Community Development
-  (HPC compute)
+### Column 3 — Results
 
-## Color palette
+**HEADLINE (biggest visual on poster):**
 
-- Primary: deep blue (#1F3A5F) for boxes' headers
-- Accent: amber (#E8A33D) for hallucination chart "Ours" bar
-- Background: white
-- Text: dark gray (#222)
+> ## Hallucination rate dropped ~10×
+
+**Bar chart, three bars side by side:**
+
+```
+  Plain chatbot          ████████████████████  19%
+  Step-by-step chatbot   █████████████████████ 21%
+  OUR SYSTEM             ██                    2%  ← in bright color
+```
+
+Big caption: "Out of 400 broken problems, plain chatbots faked 80
+confident answers. Ours faked only 8."
+
+**Smaller table — full picture:**
+
+| System | Got overall right | Faked wrong answers on broken problems |
+|---|---|---|
+| Plain chatbot | 59% | 19% |
+| Step-by-step | 60% | 21% |
+| **Ours** | 35% | **2%** |
+
+**Box: "Honest trade-off"**
+
+✅ Win: 10× fewer fake-confident answers when problem is broken
+❌ Cost: Sometimes refuses problems that DO have an answer
+   (chatbot wrote incomplete logic, so Z3 found too many solutions)
+
+**Box: "What's next"**
+
+- Train the translator instead of just prompting → better logic code
+- Tag units (dollars vs %) in logic → fix unit mistakes
+- Combine with VCSearch's smart search
+
+---
+
+## Footer band
+
+- **QR code** linking to GitHub repo (https://github.com/J4ve/NLP_FP)
+- "CSAC 224 — Natural Language Processing — Final Project, 2026"
+- "Compute: AI Research Center for Community Development HPC, CSPC"
+
+---
+
+## Visual style
+
+- White background, plain dark text
+- One **bright accent color** (suggest amber #E8A33D) — ONLY for the
+  "Ours = 2%" bar and headline number. Eye goes there first.
+- Boxes outlined in dark blue (#1F3A5F) — clean grid feel
 
 ## Typography
 
-- Headers: bold sans-serif (Inter / Helvetica), 36 pt
-- Body: 22--24 pt sans-serif
-- Code / SMT-LIB snippets: monospace 18 pt
+- Title: 72 pt bold sans-serif (Inter / Calibri / Helvetica)
+- Section headers: 36 pt bold
+- Body text: 22 pt
+- Caption / footer: 18 pt
+- Code / math: monospace 18 pt
 
 ## Pre-print checklist
 
-- [ ] All tables and figures readable from 1 m away
-- [ ] Headline (hallucination rate) visible from 3 m
-- [ ] No text below 18 pt
-- [ ] QR code resolves
-- [ ] Author emails legible
-- [ ] PDF export at 300 DPI
-- [ ] Test print on letter size, hold at arm's length to check
-      readability scaling
+- [ ] Walk 1 meter back from screen — headline still readable?
+- [ ] Walk 3 meters back — can still tell what poster is about?
+- [ ] No text smaller than 18 pt
+- [ ] QR code scans on phone
+- [ ] All 3 names + emails legible
+- [ ] Export at 300 DPI
+- [ ] Test print on letter paper at scaled size before final A1 print
+
+---
+
+## Quick elevator pitch (for when judge asks)
+
+> "Chatbots lie when math problems are broken. We made them pass the
+> problem to a logic tool first. Logic tool either solves it or says
+> 'this is impossible'. Result: ten times fewer lies on broken
+> problems."
+
+If judge wants more: "But our chatbot writes imperfect logic, so we
+sometimes refuse problems that actually have answers. Trade-off:
+safer but more cautious. Good when wrong answer is dangerous, like
+medicine or money."
