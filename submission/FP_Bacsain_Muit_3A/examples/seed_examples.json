@@ -1,0 +1,72 @@
+[
+  {
+    "problem": "John has 3 apples. Mary has 5 more apples than John. How many apples does Mary have?",
+    "smtlib": "(declare-const j Int)\n(declare-const m Int)\n(assert (= j 3))\n(assert (= m (+ j 5)))\n(check-sat)\n(get-value (m))",
+    "target": "m",
+    "label": "solvable",
+    "answer": 8
+  },
+  {
+    "problem": "A store has some books. They sold 12 books and now have 30 books. How many books did they start with?",
+    "smtlib": "(declare-const start Int)\n(declare-const sold Int)\n(declare-const remaining Int)\n(assert (= sold 12))\n(assert (= remaining 30))\n(assert (= start (+ sold remaining)))\n(check-sat)\n(get-value (start))",
+    "target": "start",
+    "label": "solvable",
+    "answer": 42
+  },
+  {
+    "problem": "Tom has twice as many marbles as Jane. Tom has 14 marbles. How many marbles does Jane have?",
+    "smtlib": "(declare-const tom Int)\n(declare-const jane Int)\n(assert (= tom 14))\n(assert (= tom (* 2 jane)))\n(check-sat)\n(get-value (jane))",
+    "target": "jane",
+    "label": "solvable",
+    "answer": 7
+  },
+  {
+    "problem": "A box contains 20 chocolates. After eating some, 8 remain. How many were eaten? (Note: the problem also states 15 were eaten.)",
+    "smtlib": "(declare-const total Int)\n(declare-const eaten Int)\n(declare-const remaining Int)\n(assert (= total 20))\n(assert (= remaining 8))\n(assert (= eaten (- total remaining)))\n(assert (= eaten 15))\n(check-sat)\n(get-value (eaten))",
+    "target": "eaten",
+    "label": "contra",
+    "answer": null
+  },
+  {
+    "problem": "Sarah has 10 dollars and spends 12 dollars. How much does she have left?",
+    "smtlib": "(declare-const start Int)\n(declare-const spent Int)\n(declare-const left Int)\n(assert (= start 10))\n(assert (= spent 12))\n(assert (>= left 0))\n(assert (= left (- start spent)))\n(check-sat)\n(get-value (left))",
+    "target": "left",
+    "label": "contra",
+    "answer": null
+  },
+  {
+    "problem": "A garden has some roses and some tulips. There are 30 flowers total. How many roses are there?",
+    "smtlib": "(declare-const roses Int)\n(declare-const tulips Int)\n(assert (>= roses 0))\n(assert (>= tulips 0))\n(assert (= (+ roses tulips) 30))\n(check-sat)\n(get-value (roses))",
+    "target": "roses",
+    "label": "missing",
+    "answer": null
+  },
+  {
+    "problem": "James drove some distance at some speed for 2 hours. How far did he drive?",
+    "smtlib": "(declare-const speed Real)\n(declare-const time Real)\n(declare-const distance Real)\n(assert (= time 2))\n(assert (> speed 0))\n(assert (= distance (* speed time)))\n(check-sat)\n(get-value (distance))",
+    "target": "distance",
+    "label": "missing",
+    "answer": null
+  },
+  {
+    "problem": "A rectangle has length 8 and width 5. What is its area?",
+    "smtlib": "(declare-const length Int)\n(declare-const width Int)\n(declare-const area Int)\n(assert (= length 8))\n(assert (= width 5))\n(assert (= area (* length width)))\n(check-sat)\n(get-value (area))",
+    "target": "area",
+    "label": "solvable",
+    "answer": 40
+  },
+  {
+    "problem": "If 3 pencils cost 6 dollars, how much do 7 pencils cost?",
+    "smtlib": "(declare-const unit_price Real)\n(declare-const total Real)\n(assert (= (* 3 unit_price) 6))\n(assert (= total (* 7 unit_price)))\n(check-sat)\n(get-value (total))",
+    "target": "total",
+    "label": "solvable",
+    "answer": 14
+  },
+  {
+    "problem": "A triangle has all three angles equal. The first angle is 50 degrees and the second is 80 degrees. What is the third?",
+    "smtlib": "(declare-const a1 Real)\n(declare-const a2 Real)\n(declare-const a3 Real)\n(assert (= a1 50))\n(assert (= a2 80))\n(assert (= a1 a2))\n(assert (= a2 a3))\n(assert (= (+ a1 a2 a3) 180))\n(check-sat)\n(get-value (a3))",
+    "target": "a3",
+    "label": "contra",
+    "answer": null
+  }
+]

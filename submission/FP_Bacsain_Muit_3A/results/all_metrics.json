@@ -1,0 +1,126 @@
+{
+  "Vanilla Qwen2.5-7B": {
+    "n": 600,
+    "accuracy": 0.5866666666666667,
+    "f1_macro": 0.4738804218196843,
+    "f1_per_class": {
+      "solvable": 0.7982646420824295,
+      "missing": 0.6233766233766234,
+      "contra": 0.0
+    },
+    "binary_f1_reject": 0.8741542625169147,
+    "binary_f1_solvable": 0.7982646420824295,
+    "answer_accuracy_on_correctly_solved": 0.7608695652173914,
+    "n_solvable_both": 184,
+    "gold_distribution": {
+      "solvable": 200,
+      "missing": 200,
+      "contra": 200
+    },
+    "pred_distribution": {
+      "solvable": 261,
+      "missing": 339
+    },
+    "classification_report": "              precision    recall  f1-score   support\n\n    solvable       0.70      0.92      0.80       200\n     missing       0.50      0.84      0.62       200\n      contra       0.00      0.00      0.00       200\n\n    accuracy                           0.59       600\n   macro avg       0.40      0.59      0.47       600\nweighted avg       0.40      0.59      0.47       600\n",
+    "confusion_matrix": [
+      [
+        184,
+        16,
+        0
+      ],
+      [
+        32,
+        168,
+        0
+      ],
+      [
+        45,
+        155,
+        0
+      ]
+    ]
+  },
+  "CoT Qwen2.5-7B": {
+    "n": 600,
+    "accuracy": 0.6,
+    "f1_macro": 0.48235312965603416,
+    "f1_per_class": {
+      "solvable": 0.8215767634854771,
+      "missing": 0.6254826254826255,
+      "contra": 0.0
+    },
+    "binary_f1_reject": 0.8802228412256268,
+    "binary_f1_solvable": 0.8215767634854771,
+    "answer_accuracy_on_correctly_solved": 0.9040404040404041,
+    "n_solvable_both": 198,
+    "gold_distribution": {
+      "solvable": 200,
+      "missing": 200,
+      "contra": 200
+    },
+    "pred_distribution": {
+      "solvable": 282,
+      "missing": 318
+    },
+    "classification_report": "              precision    recall  f1-score   support\n\n    solvable       0.70      0.99      0.82       200\n     missing       0.51      0.81      0.63       200\n      contra       0.00      0.00      0.00       200\n\n    accuracy                           0.60       600\n   macro avg       0.40      0.60      0.48       600\nweighted avg       0.40      0.60      0.48       600\n",
+    "confusion_matrix": [
+      [
+        198,
+        2,
+        0
+      ],
+      [
+        38,
+        162,
+        0
+      ],
+      [
+        46,
+        154,
+        0
+      ]
+    ]
+  },
+  "Ours (Few-shot + Z3)": {
+    "n": 600,
+    "accuracy": 0.3466666666666667,
+    "f1_macro": 0.20990830456249768,
+    "f1_per_class": {
+      "solvable": 0.1004566210045662,
+      "missing": 0.5,
+      "contra": 0.02926829268292683
+    },
+    "binary_f1_reject": 0.799184505606524,
+    "binary_f1_solvable": 0.1004566210045662,
+    "answer_accuracy_on_correctly_solved": 0.6363636363636364,
+    "n_solvable_both": 11,
+    "gold_distribution": {
+      "solvable": 200,
+      "missing": 200,
+      "contra": 200
+    },
+    "pred_distribution": {
+      "solvable": 19,
+      "contra": 5,
+      "missing": 576
+    },
+    "classification_report": "              precision    recall  f1-score   support\n\n    solvable       0.58      0.06      0.10       200\n     missing       0.34      0.97      0.50       200\n      contra       0.60      0.01      0.03       200\n\n    accuracy                           0.35       600\n   macro avg       0.51      0.35      0.21       600\nweighted avg       0.51      0.35      0.21       600\n",
+    "confusion_matrix": [
+      [
+        11,
+        189,
+        0
+      ],
+      [
+        4,
+        194,
+        2
+      ],
+      [
+        4,
+        193,
+        3
+      ]
+    ]
+  }
+}
