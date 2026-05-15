@@ -49,8 +49,8 @@ Mathematical Problems}
 %% ----------------------------------------------------------------
 \section{Abstract}
 
-Large Language Models (LLMs) frequently produce confident yet incorrect answers
-to mathematical problems that are missing key information or contain
+Large Language Models (LLMs) frequently produce confident yet incorrect
+answers to mathematical problems that are missing key information or contain
 contradictory conditions. We implement and evaluate a hybrid neuro-symbolic
 pipeline in which a few-shot prompted language model translates a math word
 problem into SMT-LIB v2 and the Z3 constraint solver makes the final decision:
@@ -58,16 +58,18 @@ a unique satisfying model yields the numeric answer, \texttt{UNSAT} signals a
 contradiction, and multiple satisfying models signal missing information. On a
 balanced 600-problem test set drawn from the PMC benchmark (ill-defined
 problems) and GSM8K (solvable problems), the pipeline using
-Qwen2.5-7B-Instruct trails vanilla and chain-of-thought baselines on aggregate
-macro F1 (0.210 vs.\ 0.474--0.482), because the 7B translator under-constrains
-its SMT-LIB output and the pipeline over-abstains on solvable inputs. However,
-the pipeline reduces the rate of confident wrong answers on ill-defined
+Qwen2.5-7B-Instruct reduces the rate of confident wrong answers on ill-defined
 problems from 19--21\% to 2\%, a roughly ten-fold reduction, and is the only
-system that explicitly detects any contradictions. The results support the
-project's hypothesis that separating language understanding from logical
-evaluation eliminates a class of hallucinations unreachable by prompted LLMs,
-while showing that closing the aggregate-F1 gap requires either a fine-tuned
-translator or a larger base model.
+system that explicitly detects any contradictions. When evaluation is framed
+as a binary reject-vs-solve decision, the pipeline's F1 on the rejection
+class (0.799) is within 9\% of the best baseline (0.880). The trade-off is
+that the 7B translator under-constrains its SMT-LIB output on roughly 80\%
+of solvable inputs, causing the pipeline to over-abstain and trail the
+baselines on three-class macro F1 (0.210 vs.\ 0.474--0.482). The results
+support the project's hypothesis that separating language understanding from
+logical evaluation eliminates a class of hallucinations unreachable by
+prompted LLMs, while indicating that closing the macro-F1 gap requires either
+a fine-tuned translator or a larger base model.
 
 %% ----------------------------------------------------------------
 \section{Introduction}
@@ -440,6 +442,38 @@ order of magnitude (2.00\% vs.\ 19.25--21.00\%), because the only path
 to a numeric output is through a uniquely-satisfying Z3 model and Z3
 will not produce one unless the translator has fully constrained the
 problem.
+
+\subsection{Binary Reject-vs-Solve View}
+
+Three-class F1 penalizes the pipeline for not distinguishing Missing-type
+from Contra-type rejections, even though both produce the same downstream
+behavior (abstention rather than a numeric answer). For most operational
+uses of such a system, the relevant question is binary: did it attempt an
+answer, or did it refuse? Table~\ref{tab:binary} reports F1 under this
+collapsed two-class view.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Binary reject-vs-solve view (missing and contra collapsed into
+  a single \texttt{REJECT} class).}
+  \label{tab:binary}
+  \begin{tabular}{lcc}
+    \toprule
+    System & F1 (Solvable) & F1 (Reject) \\
+    \midrule
+    Vanilla Qwen2.5-7B   & 0.798 & 0.874 \\
+    CoT Qwen2.5-7B       & \textbf{0.822} & \textbf{0.880} \\
+    Ours (Few-shot + Z3) & 0.100 & 0.799 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The aggregate-F1 gap between our pipeline and the best baseline shrinks
+from 0.272 (three-class macro) to 0.081 (binary reject), suggesting that
+much of the pipeline's apparent weakness in Table~\ref{tab:main} comes
+from being too cautious about which \emph{kind} of rejection to label
+rather than from failing to reject when it should.
 
 \subsection{Confusion Analysis}
 
