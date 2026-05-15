@@ -1,0 +1,41 @@
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.bbl
+*.blg
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+
+# Editor / OS
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Project-specific
+final_project/data/
+final_project/models/
+final_project/results/*.log
+final_project/install.log
+
+# Template artifacts not needed in repo
+Project Format/
+Project Format.zip
+
+# Internal planning / verification notes (not for groupmate)
+documents/
+
+# Mac archive metadata
+__MACOSX/
