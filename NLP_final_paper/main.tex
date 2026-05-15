@@ -81,11 +81,14 @@ because they are trained to produce \textit{plausible} text, they often
 generate a confident-sounding answer even when no correct answer
 exists~\cite{huang2025}. This tendency is known as hallucination.
 
-The problem is especially damaging in mathematics. Real-world applications in
-fields such as finance, healthcare, and engineering frequently involve
-problems with missing data or conflicting requirements~\cite{puchalska1987}. A
-student who forgets to include a key value in their homework, or a dataset
-with an entry error, can produce a problem that is mathematically unsolvable,
+The problem is especially damaging in mathematics. Puchalska and
+Semadeni~\cite{puchalska1987} document that even grade-school students,
+when shown arithmetic problems with missing, surplus, or contradictory
+data, often produce a numeric answer rather than question the prompt; the
+same failure mode persists in modern LLMs and is more consequential when
+the downstream consumer is a financial system, a medical dosing tool, or
+an automated grader. A student who omits a key value, or a dataset with
+an entry error, can produce a problem that is mathematically unsolvable,
 yet standard LLMs will still produce a numeric answer with apparent
 confidence.
 
@@ -210,6 +213,7 @@ translation step (Section~\ref{sec:method}) is forced to handle real-world
 problem text rather than a pre-cleaned subset.
 
 \subsection{Seed Examples for Few-Shot Prompting}
+\label{sec:seeds}
 
 We hand-crafted 10 (problem, SMT-LIB) demonstration pairs covering the three
 classes (three solvable, three contradictory, four missing-information).
@@ -266,7 +270,7 @@ leave unknown quantities as free variables for missing-information
 problems.
 
 We provide the model with the 10 hand-crafted demonstrations described in
-Section~3.3 as few-shot examples in the user message. The deep contextual
+Section~\ref{sec:seeds} as few-shot examples in the user message. The deep contextual
 representations built by the model's attention layers~\cite{vaswani2017}
 are well-suited for capturing the relationships between quantities and
 entities in a word problem: for example, the system correctly captures
@@ -366,6 +370,7 @@ language model produces malformed or semantically incorrect SMT-LIB, but
 they manifest as abstentions rather than confident false answers.
 
 \subsection{Implementation Details}
+\label{sec:impl}
 
 \textbf{Base model.} We use Qwen2.5-7B-Instruct~\cite{qwen2_5} as our
 underlying language model. We chose this model over
@@ -618,27 +623,29 @@ formally verifiable property of the solver output.
 
 \textbf{What the pipeline pays.} The cost is over-rejection of genuinely
 solvable problems. Only 11 of 200 solvable cases are answered (vs.\ 184
-and 198 for vanilla and CoT). Manual inspection of pipeline outputs
-shows that the 7B model's SMT-LIB translations omit one or more
-necessary asserts in roughly 80\% of solvable cases, even with explicit
-prompt instructions to bound natural quantities by zero. Z3 then
-satisfies the under-constrained system with multiple models, classified
-by our wrapper as a Missing-type rejection.
+and 198 for vanilla and CoT). The pipeline rejects 189 of the 200 solvable
+inputs as Missing-type, meaning the 7B model's SMT-LIB translations leave
+the target variable under-determined on roughly 94\% of solvable cases,
+even with explicit prompt instructions to bound natural quantities by zero
+and the auto-repair pass active. Z3 then satisfies the residual
+constraints with multiple models, which our wrapper classifies as a
+Missing-type rejection.
 
 \textbf{Error analysis.} Two failure modes dominate pipeline errors.
 
-\emph{Translation under-specification.} For the GSM8K problem ``Larry
-has 3 cats, three times as many dogs as cats, two fewer rabbits than
-dogs, three times as many fish as rabbits, and some gerbils. How many
-pets total?'' the translator produces a chain of correct definitions
-and declares \texttt{total}, but never bounds \texttt{gerbils}. The
-auto-repair pass adds \texttt{(declare-const gerbils Int)} so the
-SMT-LIB parses, but no constraint pins \texttt{gerbils} to a value, so
-\texttt{total} also remains under-determined and Z3 returns multiple
-models. The pipeline outputs \texttt{REJECT} (Missing-type) for what is
-in fact a missing-data problem in the original wording — a case we
-would call a genuine partial success but the gold label marks
-\texttt{solvable}, costing us one solvable point.
+\emph{Translation truncation.} For complex multi-step problems, the
+greedy decoder occasionally truncates the SMT-LIB output before the
+final asserts are written, even at our extended \texttt{max\_new\_tokens=768}
+budget. As one example, on a GSM8K commission problem (``James sold 10
+cars at \$25{,}000 each, paid 30\% to acquire them, takes 10\%
+commission on profits; how much did he make?''), the translator
+declares all relevant variables and writes the asserts for
+\texttt{price\_per\_car}, \texttt{acquisition\_cost\_per\_car}, and
+\texttt{profit\_per\_car}, but the output ends mid-assertion on
+\texttt{(assert} before encoding the constraint linking
+\texttt{total\_profit} and \texttt{total\_earnings} to those variables.
+The remaining variables are then unconstrained, Z3 finds multiple
+satisfying models, and the pipeline outputs \texttt{REJECT}.
 
 \emph{Implicit constraint omission.} For the PMC contradictory problem
 ``A construction company has repaved a total of 4938 inches of road.
@@ -673,8 +680,8 @@ class of error.
 
 \subsection{Ablation: Effect of SMT-LIB Auto-Repair}
 
-The auto-repair pass (Section~5.4, \emph{Implementation Details}) is
-not optional in our setup. Without it, Z3's
+The auto-repair pass (Section~\ref{sec:impl}) is not optional in our
+setup. Without it, Z3's
 \texttt{parse\_smt2\_string} silently discards any assertion that
 references an undeclared symbol, which causes the parsed assertion
 list to be empty far more often than expected. An empty assertion list
@@ -690,7 +697,7 @@ silent-drop behavior to not dominate the decision.
 
 \textbf{Translator capacity.} A 7B model with only 10 in-context
 demonstrations cannot reliably produce fully constrained SMT-LIB on
-multi-step word problems. The under-constraint rate of ~80\% on
+multi-step word problems. The under-constraint rate of roughly 94\% on
 solvable inputs is the single largest determinant of aggregate
 accuracy in our experiments.
 
